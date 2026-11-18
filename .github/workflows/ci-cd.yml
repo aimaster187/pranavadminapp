@@ -203,7 +203,7 @@ jobs:
       - name: Verify PRANAV.dex is standalone (not an APK)
         run: |
           test -f pranav-dex/dist/PRANAV.dex
-          sha256sum -c pranav-dex/dist/PRANAV.dex.sha256
+          (cd pranav-dex/dist && sha256sum -c PRANAV.dex.sha256)
           grep -q '"isApk": false' pranav-dex/dist/dex-manifest.json
       - name: Upload Standalone PRANAV.dex Artifact
         uses: actions/upload-artifact@v4
