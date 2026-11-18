@@ -1,0 +1,13 @@
+/var/log/pranav/*.log {
+    daily
+    rotate 14
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0640 pranav pranav
+    sharedscripts
+    postrotate
+        systemctl reload pranav-backend >/dev/null 2>&1 || true
+    endscript
+}

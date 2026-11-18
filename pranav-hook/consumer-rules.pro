@@ -1,0 +1,2 @@
+-keep class com.pranav.hook.** { *; }
+-dontwarn com.pranav.hook.**
