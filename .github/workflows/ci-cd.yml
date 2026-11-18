@@ -45,10 +45,18 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
       - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+      - name: Prepare debug keystore from base64 if missing
+        run: |
+          if [ ! -f debug.keystore ] && [ -f debug.keystore.base64 ]; then
+            base64 -d debug.keystore.base64 > debug.keystore
+          fi
       - name: Run Admin App Robolectric Tests
-        run: ./gradlew :app:testDebugUnitTest --no-daemon
+        run: gradle :app:testDebugUnitTest --no-daemon
       - name: Decode Release Keystore (if configured in GitHub Secrets)
         if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
         env:
@@ -61,9 +69,9 @@ jobs:
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           if [ -f my-upload-key.jks ]; then
-            ./gradlew :app:assembleRelease --no-daemon
+            gradle :app:assembleRelease --no-daemon
           else
-            ./gradlew :app:assembleDebug --no-daemon
+            gradle :app:assembleDebug --no-daemon
           fi
       - name: Upload PRANAV Admin App APK
         uses: actions/upload-artifact@v4
@@ -71,7 +79,7 @@ jobs:
           name: pranav-admin-apk
           path: app/build/outputs/apk/**/*.apk
 
-  # 3. PRANAV Android SDK (:pranav-sdk)
+  # 3. PRANAV Android SDK (:pranav-sdk) & Sample Host App (:sample-host-app)
   pranav-sdk:
     runs-on: ubuntu-latest
     steps:
@@ -79,15 +87,20 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
       - uses: gradle/actions/setup-gradle@v4
-      - name: Test and assemble PRANAV SDK AAR
-        run: ./gradlew :pranav-sdk:testDebugUnitTest :pranav-sdk:assembleRelease --no-daemon
+        with:
+          gradle-version: '9.3.1'
+      - name: Test and assemble PRANAV SDK AAR & Sample Host Debug APK
+        run: gradle :pranav-sdk:testDebugUnitTest :pranav-sdk:assembleRelease :sample-host-app:assembleDebug --no-daemon
       - name: Upload PRANAV SDK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: pranav-sdk-aar
-          path: pranav-sdk/build/outputs/aar/*-release.aar
+          path: |
+            pranav-sdk/build/outputs/aar/*-release.aar
+            sample-host-app/build/outputs/apk/debug/*.apk
 
   # 4. Standalone PRANAV.dex Deliverable (NEVER a DEX APK)
   pranav-dex:
@@ -97,11 +110,15 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
       - uses: android-actions/setup-android@v3
+      - name: Install Android SDK Build-Tools 36.0.0 and Platform 36
+        run: sdkmanager "build-tools;36.0.0" "platforms;android-36"
       - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
       - name: Run PRANAV.dex contract tests
-        run: ./gradlew :pranav-dex:testDebugUnitTest --no-daemon
+        run: gradle :pranav-dex:testDebugUnitTest --no-daemon
       - name: Build standalone PRANAV.dex + SHA-256 manifest
         run: bash pranav-dex/scripts/build-dex.sh
       - name: Verify PRANAV.dex is standalone (not an APK)
@@ -126,10 +143,13 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
       - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
       - name: Test and assemble PRANAV Hook AAR
-        run: ./gradlew :pranav-hook:testDebugUnitTest :pranav-hook:assembleRelease --no-daemon
+        run: gradle :pranav-hook:testDebugUnitTest :pranav-hook:assembleRelease --no-daemon
       - name: Upload PRANAV Hook Artifact
         uses: actions/upload-artifact@v4
         with:
